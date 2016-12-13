@@ -87,7 +87,7 @@ class LineMsgHandler(tornado.web.RequestHandler):
             raise
 
         # get request body as text
-        body = str(self.request.body)
+        body = self.request.body.decode('utf-8')
 
         # parse webhook body
         try:
