@@ -15,6 +15,16 @@ import tornado.ioloop
 import tornado.options
 import tornado.web
 
+from linebot import (
+    LineBotApi, WebhookParser
+)
+from linebot.exceptions import (
+    InvalidSignatureError
+)
+from linebot.models import (
+    MessageEvent, TextMessage, TextSendMessage,
+)
+
 # import and define tornado-y things
 from tornado.options import define
 define("port", default=5000, help="run on the given port", type=int)
@@ -24,7 +34,8 @@ define("port", default=5000, help="run on the given port", type=int)
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r"/([^/]+)?", MainHandler)
+            (r"/", MainHandler),
+            (r"/callback", LineMsgHandler)
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -36,7 +47,7 @@ class Application(tornado.web.Application):
 
 # the main page
 class MainHandler(tornado.web.RequestHandler):
-    def get(self, q):
+    def get(self):
         if 'GOOGLEANALYTICSID' in os.environ:
             google_analytics_id = os.environ['GOOGLEANALYTICSID']
         else:
@@ -48,6 +59,13 @@ class MainHandler(tornado.web.RequestHandler):
             page_heading='fuga!',
             google_analytics_id=google_analytics_id,
         )
+
+
+# line handler
+class LineMsgHandler(tornado.web.RequestHandler):
+    def post(self):
+        hd = self.request.headers
+        self.write(str(hd))
 
 
 # RAMMING SPEEEEEEED!
