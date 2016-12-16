@@ -1,12 +1,3 @@
-#    Sample main.py Tornado file
-#    (for Tornado on Heroku)
-#
-#    Author: Mike Dory | dory.me
-#    Created: 11.12.11 | Updated: 06.02.13
-#    Contributions by Tedb0t, gregory80
-#
-# ------------------------------------------
-
 #!/usr/bin/env python
 import os.path
 import tornado.escape
@@ -52,7 +43,7 @@ parser = WebhookParser(channel_secret)
 
 # define docomo_dialog api token
 docomo_api_key = os.getenv(
-    'API_KEY', "374e544e6e585643347776797a794650524579705a62706754696b6c31717a553867615957465850784843")
+    'API_KEY', None)
 
 
 # application settings and handle mapping info
@@ -81,7 +72,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.render(
             "main.html",
             page_title='Heroku Funtimes',
-            page_heading='fuga!',
+            page_heading='Hi!',
             google_analytics_id=google_analytics_id,
         )
 
@@ -166,8 +157,6 @@ def main():
     tornado.options.parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(tornado.options.options.port)
-
-    # start it up
     tornado.ioloop.IOLoop.instance().start()
 
 
