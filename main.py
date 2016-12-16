@@ -29,6 +29,8 @@ from linebot.models import (
 
 import sys
 
+import kvs
+
 # import and define tornado-y things
 from tornado.options import define
 define("port", default=5000, help="run on the given port", type=int)
@@ -83,7 +85,9 @@ class MainHandler(tornado.web.RequestHandler):
             google_analytics_id=google_analytics_id,
         )
 
-context =None
+context = None
+
+
 # line message handler
 class LineMsgHandler(tornado.web.RequestHandler):
     def post(self):
@@ -112,7 +116,7 @@ class LineMsgHandler(tornado.web.RequestHandler):
             if not isinstance(event.message, TextMessage):
                 continue
 
-            message = self.docomo_dialog(event.message.text)
+            message = self.docomo_dialog(event.message.text, event.source.userId)
 
             line_bot_api.reply_message(
                 event.reply_token,
@@ -121,16 +125,16 @@ class LineMsgHandler(tornado.web.RequestHandler):
 
         self.write("OK")
 
-    def docomo_dialog(self, message: str) -> str:
-        global context
+    def docomo_dialog(self, message: str, line_user_id) -> str:
+        db = kvs.KVS()
         docomo_api_endpoint = 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue' + '?APIKEY=' + docomo_api_key
 
         req_body = {
             "utt": message
         }
         # check context id is exist
-        if context is not None:
-            req_body.update({"context": context})
+        if db.get_value(line_user_id) is not None:
+            req_body.update({"context": db.get_value(line_user_id)})
 
         # fetching dialog api
         http_client = tornado.httpclient.HTTPClient()
@@ -146,15 +150,14 @@ class LineMsgHandler(tornado.web.RequestHandler):
             response = http_client.fetch(request)
         except:
             raise
-
         http_client.close()
 
         # parse response json
         res = json.loads(response.body.decode('utf-8'))
 
         # set context_id
-        if context is None:
-            context = res.get('context', None)
+        if db.get_value(line_user_id) is None:
+            db.set_value(line_user_id, res.get('context'))
 
         return res.get('utt', 'ファッ!?')
 
