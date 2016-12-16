@@ -14,6 +14,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
+import tornado.httpclient
 
 from linebot import (
     LineBotApi, WebhookParser
@@ -44,6 +45,11 @@ if channel_access_token is None:
 
 line_bot_api = LineBotApi(channel_access_token)
 parser = WebhookParser(channel_secret)
+
+
+# define docomo_dialog api token
+docomo_api_key = os.getenv(
+    'API_KEY', "374e544e6e585643347776797a794650524579705a62706754696b6c31717a553867615957465850784843")
 
 
 # application settings and handle mapping info
@@ -77,7 +83,7 @@ class MainHandler(tornado.web.RequestHandler):
         )
 
 
-# line handler
+# line message handler
 class LineMsgHandler(tornado.web.RequestHandler):
     def post(self):
         try:
@@ -112,8 +118,6 @@ class LineMsgHandler(tornado.web.RequestHandler):
         self.write("OK")
 
 
-
-# RAMMING SPEEEEEEED!
 def main():
     tornado.options.parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
