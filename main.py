@@ -116,7 +116,7 @@ class LineMsgHandler(tornado.web.RequestHandler):
             if not isinstance(event.message, TextMessage):
                 continue
 
-            message = self.docomo_dialog(event.message.text, event.source.userId)
+            message = self.docomo_dialog(event.message.text, event.source.user)
 
             line_bot_api.reply_message(
                 event.reply_token,
