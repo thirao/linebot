@@ -15,6 +15,7 @@ import tornado.ioloop
 import tornado.options
 import tornado.web
 import tornado.httpclient
+import json
 
 from linebot import (
     LineBotApi, WebhookParser
@@ -82,10 +83,11 @@ class MainHandler(tornado.web.RequestHandler):
             google_analytics_id=google_analytics_id,
         )
 
-
+context =None
 # line message handler
 class LineMsgHandler(tornado.web.RequestHandler):
     def post(self):
+        # check header
         try:
             signature = self.request.headers['X-Line-Signature']
         except KeyError:
@@ -110,12 +112,51 @@ class LineMsgHandler(tornado.web.RequestHandler):
             if not isinstance(event.message, TextMessage):
                 continue
 
+            message = self.docomo_dialog(event.message.text)
+
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=event.message.text)
+                TextSendMessage(text=message)
             )
 
         self.write("OK")
+
+    def docomo_dialog(self, message: str) -> str:
+        global context
+        docomo_api_endpoint = 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue' + '?APIKEY=' + docomo_api_key
+
+        req_body = {
+            "utt": message
+        }
+        # check context id is exist
+        if context is not None:
+            req_body.update({"context": context})
+
+        # fetching dialog api
+        http_client = tornado.httpclient.HTTPClient()
+        try:
+            request = tornado.httpclient.HTTPRequest(
+                url=docomo_api_endpoint,
+                method='POST',
+                headers={
+                    'Content-Type': 'application/json'
+                },
+                body=json.dumps(req_body)
+            )
+            response = http_client.fetch(request)
+        except:
+            raise
+
+        http_client.close()
+
+        # parse response json
+        res = json.loads(response.body.decode('utf-8'))
+
+        # set context_id
+        if context is None:
+            context = res.get('context', None)
+
+        return res.get('utt', 'ファッ!?')
 
 
 def main():
